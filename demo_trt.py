@@ -17,10 +17,13 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
+
 def GiB(val):
     return val * 1 << 30
 
-def find_sample_data(description="Runs a TensorRT Python sample", subfolder="", find_files=[]):
+
+def find_sample_data(
+        description="Runs a TensorRT Python sample", subfolder="", find_files=[]):
     '''
     Parses sample arguments.
     Args:
@@ -35,32 +38,50 @@ def find_sample_data(description="Runs a TensorRT Python sample", subfolder="", 
 
     # Standard command-line arguments for all samples.
     kDEFAULT_DATA_ROOT = os.path.join(os.sep, "usr", "src", "tensorrt", "data")
-    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-d", "--datadir", help="Location of the TensorRT sample data directory.", default=kDEFAULT_DATA_ROOT)
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "-d",
+        "--datadir",
+        help="Location of the TensorRT sample data directory.",
+        default=kDEFAULT_DATA_ROOT)
     args, unknown_args = parser.parse_known_args()
 
     # If data directory is not specified, use the default.
     data_root = args.datadir
-    # If the subfolder exists, append it to the path, otherwise use the provided path as-is.
+    # If the subfolder exists, append it to the path, otherwise use the
+    # provided path as-is.
     subfolder_path = os.path.join(data_root, subfolder)
     data_path = subfolder_path
     if not os.path.exists(subfolder_path):
-        print("WARNING: " + subfolder_path + " does not exist. Trying " + data_root + " instead.")
+        print(
+            "WARNING: " +
+            subfolder_path +
+            " does not exist. Trying " +
+            data_root +
+            " instead.")
         data_path = data_root
 
     # Make sure data directory exists.
     if not (os.path.exists(data_path)):
-        raise FileNotFoundError(data_path + " does not exist. Please provide the correct data path with the -d option.")
+        raise FileNotFoundError(
+            data_path +
+            " does not exist. Please provide the correct data path with the -d option.")
 
     # Find all requested files.
     for index, f in enumerate(find_files):
         find_files[index] = os.path.abspath(os.path.join(data_path, f))
         if not os.path.exists(find_files[index]):
-            raise FileNotFoundError(find_files[index] + " does not exist. Please provide the correct data path with the -d option.")
+            raise FileNotFoundError(
+                find_files[index] +
+                " does not exist. Please provide the correct data path with the -d option.")
 
     return data_path, find_files
 
 # Simple helper data class that's a little nicer to use than a 2-tuple.
+
+
 class HostDeviceMem(object):
     def __init__(self, host_mem, device_mem):
         self.host = host_mem
@@ -72,7 +93,10 @@ class HostDeviceMem(object):
     def __repr__(self):
         return self.__str__()
 
-# Allocates all buffers required for an engine, i.e. host/device inputs/outputs.
+# Allocates all buffers required for an engine, i.e. host/device
+# inputs/outputs.
+
+
 def allocate_buffers(engine, batch_size):
     inputs = []
     outputs = []
@@ -82,11 +106,11 @@ def allocate_buffers(engine, batch_size):
 
         size = trt.volume(engine.get_binding_shape(binding)) * batch_size
         dims = engine.get_binding_shape(binding)
-        
+
         # in case batch dimension is -1 (dynamic)
         if dims[0] < 0:
             size *= -1
-        
+
         dtype = trt.nptype(engine.get_binding_dtype(binding))
         # Allocate host and device buffers
         host_mem = cuda.pagelocked_empty(size, dtype)
@@ -102,6 +126,8 @@ def allocate_buffers(engine, batch_size):
 
 # This function is generalized for multiple inputs/outputs.
 # inputs and outputs are expected to be lists of HostDeviceMem objects.
+
+
 def do_inference(context, bindings, inputs, outputs, stream):
     # Transfer input data to the GPU.
     [cuda.memcpy_htod_async(inp.device, inp.host, stream) for inp in inputs]
@@ -117,6 +143,7 @@ def do_inference(context, bindings, inputs, outputs, stream):
 
 TRT_LOGGER = trt.Logger()
 
+
 def main(engine_path, image_path, image_size):
     with get_engine(engine_path) as engine, engine.create_execution_context() as context:
         buffers = allocate_buffers(engine, 1)
@@ -129,7 +156,12 @@ def main(engine_path, image_path, image_size):
 
         for i in range(2):  # This 'for' loop is for speed check
                             # Because the first iteration is usually longer
-            boxes = detect(context, buffers, image_src, image_size, num_classes)
+            boxes = detect(
+                context,
+                buffers,
+                image_src,
+                image_size,
+                num_classes)
 
         if num_classes == 20:
             namesfile = 'data/voc.names'
@@ -139,7 +171,11 @@ def main(engine_path, image_path, image_size):
             namesfile = 'data/names'
 
         class_names = load_class_names(namesfile)
-        plot_boxes_cv2(image_src, boxes[0], savename='predictions_trt.jpg', class_names=class_names)
+        plot_boxes_cv2(
+            image_src,
+            boxes[0],
+            savename='predictions_trt.jpg',
+            class_names=class_names)
 
 
 def get_engine(engine_path):
@@ -149,13 +185,13 @@ def get_engine(engine_path):
         return runtime.deserialize_cuda_engine(f.read())
 
 
-
 def detect(context, buffers, image_src, image_size, num_classes):
     IN_IMAGE_H, IN_IMAGE_W = image_size
 
     ta = time.time()
     # Input
-    resized = cv2.resize(image_src, (IN_IMAGE_W, IN_IMAGE_H), interpolation=cv2.INTER_LINEAR)
+    resized = cv2.resize(image_src, (IN_IMAGE_W, IN_IMAGE_H),
+                         interpolation=cv2.INTER_LINEAR)
     img_in = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
     img_in = np.transpose(img_in, (2, 0, 1)).astype(np.float32)
     img_in = np.expand_dims(img_in, axis=0)
@@ -168,7 +204,12 @@ def detect(context, buffers, image_src, image_size, num_classes):
     print('Length of inputs: ', len(inputs))
     inputs[0].host = img_in
 
-    trt_outputs = do_inference(context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream)
+    trt_outputs = do_inference(
+        context,
+        bindings=bindings,
+        inputs=inputs,
+        outputs=outputs,
+        stream=stream)
 
     print('Len of outputs: ', len(trt_outputs))
 
@@ -186,16 +227,15 @@ def detect(context, buffers, image_src, image_size, num_classes):
     return boxes
 
 
-
 if __name__ == '__main__':
     engine_path = sys.argv[1]
     image_path = sys.argv[2]
-    
+
     if len(sys.argv) < 4:
         image_size = (416, 416)
     elif len(sys.argv) < 5:
         image_size = (int(sys.argv[3]), int(sys.argv[3]))
     else:
         image_size = (int(sys.argv[3]), int(sys.argv[4]))
-    
+
     main(engine_path, image_path, image_size)

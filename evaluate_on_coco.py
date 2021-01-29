@@ -50,6 +50,7 @@ def get_class_name(cat):
         cat = cat - 11
     return class_names[cat]
 
+
 def convert_cat_id_and_reorientate_bbox(single_annotation):
     cat = single_annotation['category_id']
     bbox = single_annotation['bbox']
@@ -78,7 +79,6 @@ def convert_cat_id_and_reorientate_bbox(single_annotation):
     return single_annotation
 
 
-
 def myconverter(obj):
     if isinstance(obj, np.integer):
         return int(obj)
@@ -91,12 +91,17 @@ def myconverter(obj):
     else:
         return obj
 
+
 def evaluate_on_coco(cfg, resFile):
     annType = "bbox"  # specify type here
     with open(resFile, 'r') as f:
         unsorted_annotations = json.load(f)
-    sorted_annotations = list(sorted(unsorted_annotations, key=lambda single_annotation: single_annotation["image_id"]))
-    sorted_annotations = list(map(convert_cat_id_and_reorientate_bbox, sorted_annotations))
+    sorted_annotations = list(
+        sorted(
+            unsorted_annotations,
+            key=lambda single_annotation: single_annotation["image_id"]))
+    sorted_annotations = list(
+        map(convert_cat_id_and_reorientate_bbox, sorted_annotations))
     reshaped_annotations = defaultdict(list)
     for annotation in sorted_annotations:
         reshaped_annotations[annotation['image_id']].append(annotation)
@@ -124,7 +129,9 @@ def evaluate_on_coco(cfg, resFile):
             lambda label_json: label_json['image_id'] == image_id, gt_annotation_raw_labels
         ))
         if len(gt_annotation_image_raw) == 1:
-            image_path = os.path.join(cfg.dataset_dir, gt_annotation_image_raw[0]["file_name"])
+            image_path = os.path.join(
+                cfg.dataset_dir,
+                gt_annotation_image_raw[0]["file_name"])
             actual_image = Image.open(image_path).convert('RGB')
             draw = ImageDraw.Draw(actual_image)
 
@@ -134,19 +141,22 @@ def evaluate_on_coco(cfg, resFile):
                 cls_id = annotation['category_id']
                 label = get_class_name(cls_id)
                 draw.text((x1_pred, y1_pred), label, fill=rgb_pred)
-                draw.rectangle([x1_pred, y1_pred, x2_pred, y2_pred], outline=rgb_pred)
+                draw.rectangle([x1_pred, y1_pred, x2_pred,
+                                y2_pred], outline=rgb_pred)
             for annotation in gt_annotation_labels_raw:
                 x1_truth, y1_truth, w, h = annotation['bbox']
                 x2_truth, y2_truth = x1_truth + w, y1_truth + h
                 cls_id = annotation['category_id']
                 label = get_class_name(cls_id)
                 draw.text((x1_truth, y1_truth), label, fill=rgb_label)
-                draw.rectangle([x1_truth, y1_truth, x2_truth, y2_truth], outline=rgb_label)
-            actual_image.save("./data/outcome/predictions_{}".format(gt_annotation_image_raw[0]["file_name"]))
+                draw.rectangle([x1_truth, y1_truth, x2_truth,
+                                y2_truth], outline=rgb_label)
+            actual_image.save(
+                "./data/outcome/predictions_{}".format(gt_annotation_image_raw[0]["file_name"]))
         else:
             print('please check')
             break
-        if (i + 1) % 100 == 0: # just see first 100
+        if (i + 1) % 100 == 0:  # just see first 100
             break
 
     imgIds = sorted(cocoGt.getImgIds())
@@ -171,7 +181,8 @@ def test(model, annotations, cfg):
         use_cuda = 0
 
     # do one forward pass first to circumvent cold start
-    throwaway_image = Image.open('data/dog.jpg').convert('RGB').resize((model.width, model.height))
+    throwaway_image = Image.open(
+        'data/dog.jpg').convert('RGB').resize((model.width, model.height))
     do_detect(model, throwaway_image, 0.5, 80, 0.4, use_cuda)
     boxes_json = []
 
@@ -183,7 +194,10 @@ def test(model, annotations, cfg):
         image_width = image_annotation["width"]
 
         # open and resize each image first
-        img = Image.open(os.path.join(cfg.dataset_dir, image_file_name)).convert('RGB')
+        img = Image.open(
+            os.path.join(
+                cfg.dataset_dir,
+                image_file_name)).convert('RGB')
         sized = img.resize((model.width, model.height))
 
         if use_cuda:
@@ -192,7 +206,7 @@ def test(model, annotations, cfg):
         start = time.time()
         boxes = do_detect(model, sized, 0.0, 80, 0.4, use_cuda)
         finish = time.time()
-        if type(boxes) == list:
+        if isinstance(boxes, list):
             for box in boxes:
                 box_json = {}
                 category_id = box[-1]
@@ -209,7 +223,8 @@ def test(model, annotations, cfg):
                         modified_bbox_coord *= image_width
                     modified_bbox_coord = round(modified_bbox_coord, 2)
                     bbox.append(modified_bbox_coord)
-                box_json["bbox_normalized"] = list(map(lambda x: round(float(x), 2), bbox_normalized))
+                box_json["bbox_normalized"] = list(
+                    map(lambda x: round(float(x), 2), bbox_normalized))
                 box_json["bbox"] = bbox
                 box_json["score"] = round(float(score), 2)
                 box_json["timing"] = float(finish - start)
@@ -218,7 +233,8 @@ def test(model, annotations, cfg):
                 with open(resFile, 'w') as outfile:
                     json.dump(boxes_json, outfile, default=myconverter)
         else:
-            print("warning: output from model after postprocessing is not a list, ignoring")
+            print(
+                "warning: output from model after postprocessing is not a list, ignoring")
             return
 
         # namesfile = 'data/coco.names'
@@ -254,12 +270,14 @@ def get_args(**kwargs):
     return edict(cfg)
 
 
-def init_logger(log_file=None, log_dir=None, log_level=logging.INFO, mode='w', stdout=True):
+def init_logger(log_file=None, log_dir=None,
+                log_level=logging.INFO, mode='w', stdout=True):
     """
     log_dir: 日志文件的文件夹路径
     mode: 'a', append; 'w', 覆盖原文件写入.
     """
     import datetime
+
     def get_date_str():
         now = datetime.datetime.now()
         return now.strftime('%Y-%m-%d_%H-%M-%S')
@@ -312,7 +330,7 @@ if __name__ == "__main__":
     with open(annotations_file_path) as annotations_file:
         try:
             annotations = json.load(annotations_file)
-        except:
+        except BaseException:
             print("annotations file not a json")
             exit()
     test(model=model,

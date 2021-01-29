@@ -18,7 +18,8 @@ def transform_to_tensorflow(onnx_input_path, pb_output_path):
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        sys.argv.append('../weight/yolov4_1_3_608_608.onnx')  # use:darknet2onnx.py
+        # use:darknet2onnx.py
+        sys.argv.append('../weight/yolov4_1_3_608_608.onnx')
         sys.argv.append('../weight/yolov4.pb')  # use:onnx2tensorflow.py
     if len(sys.argv) == 3:
         onnxfile = sys.argv[1]

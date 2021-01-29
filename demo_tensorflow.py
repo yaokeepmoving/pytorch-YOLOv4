@@ -7,7 +7,8 @@ import cv2
 from tool.utils import post_processing, load_class_names, plot_boxes_cv2
 
 
-def demo_tensorflow(tfpb_file="./weight/yolov4.pb", image_path=None, print_sensor_name=False):
+def demo_tensorflow(tfpb_file="./weight/yolov4.pb",
+                    image_path=None, print_sensor_name=False):
     graph_name = 'yolov4'
     tf.compat.v1.disable_eager_execution()
     with tf.compat.v1.Session() as persisted_sess:
@@ -21,21 +22,30 @@ def demo_tensorflow(tfpb_file="./weight/yolov4.pb", image_path=None, print_senso
 
         # print all sensor_name
         if print_sensor_name:
-            tensor_name_list = [tensor.name for tensor in tf.compat.v1.get_default_graph().as_graph_def().node]
+            tensor_name_list = [
+                tensor.name for tensor in tf.compat.v1.get_default_graph().as_graph_def().node]
             for tensor_name in tensor_name_list:
                 print(tensor_name)
 
-        inp = persisted_sess.graph.get_tensor_by_name(graph_name + '/' + 'input:0')
+        inp = persisted_sess.graph.get_tensor_by_name(
+            graph_name + '/' + 'input:0')
         print(inp.shape)
-        out1 = persisted_sess.graph.get_tensor_by_name(graph_name + '/' + 'output_1:0')
-        out2 = persisted_sess.graph.get_tensor_by_name(graph_name + '/' + 'output_2:0')
-        out3 = persisted_sess.graph.get_tensor_by_name(graph_name + '/' + 'output_3:0')
+        out1 = persisted_sess.graph.get_tensor_by_name(
+            graph_name + '/' + 'output_1:0')
+        out2 = persisted_sess.graph.get_tensor_by_name(
+            graph_name + '/' + 'output_2:0')
+        out3 = persisted_sess.graph.get_tensor_by_name(
+            graph_name + '/' + 'output_3:0')
         print(out1.shape, out2.shape, out3.shape)
 
         # image_src = np.random.rand(1, 3, 608, 608).astype(np.float32)  # input image
         # Input
         image_src = cv2.imread(image_path)
-        resized = cv2.resize(image_src, (inp.shape[2], inp.shape[3]), interpolation=cv2.INTER_LINEAR)
+        resized = cv2.resize(
+            image_src,
+            (inp.shape[2],
+             inp.shape[3]),
+            interpolation=cv2.INTER_LINEAR)
         img_in = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
         img_in = np.transpose(img_in, (2, 0, 1)).astype(np.float32)
         img_in = np.expand_dims(img_in, axis=0)
@@ -60,7 +70,11 @@ def demo_tensorflow(tfpb_file="./weight/yolov4.pb", image_path=None, print_senso
             namesfile = 'data/names'
 
         class_names = load_class_names(namesfile)
-        result = plot_boxes_cv2(image_src, boxes, savename=None, class_names=class_names)
+        result = plot_boxes_cv2(
+            image_src,
+            boxes,
+            savename=None,
+            class_names=class_names)
         cv2.imshow("tensorflow predicted", result)
         cv2.waitKey()
 

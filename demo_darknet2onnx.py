@@ -28,13 +28,13 @@ def main(cfg_file, weight_file, image_path, batch_size):
     detect(session, image_src)
 
 
-
 def detect(session, image_src):
     IN_IMAGE_H = session.get_inputs()[0].shape[2]
     IN_IMAGE_W = session.get_inputs()[0].shape[3]
 
     # Input
-    resized = cv2.resize(image_src, (IN_IMAGE_W, IN_IMAGE_H), interpolation=cv2.INTER_LINEAR)
+    resized = cv2.resize(image_src, (IN_IMAGE_W, IN_IMAGE_H),
+                         interpolation=cv2.INTER_LINEAR)
     img_in = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
     img_in = np.transpose(img_in, (2, 0, 1)).astype(np.float32)
     img_in = np.expand_dims(img_in, axis=0)
@@ -57,8 +57,11 @@ def detect(session, image_src):
         namesfile = 'data/names'
 
     class_names = load_class_names(namesfile)
-    plot_boxes_cv2(image_src, boxes[0], savename='predictions_onnx.jpg', class_names=class_names)
-
+    plot_boxes_cv2(
+        image_src,
+        boxes[0],
+        savename='predictions_onnx.jpg',
+        class_names=class_names)
 
 
 if __name__ == '__main__':

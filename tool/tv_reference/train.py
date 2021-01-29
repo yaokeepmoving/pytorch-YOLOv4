@@ -65,20 +65,28 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False), args.data_path)
+    dataset, num_classes = get_dataset(
+        args.dataset, "train", get_transform(
+            train=True), args.data_path)
+    dataset_test, _ = get_dataset(
+        args.dataset, "val", get_transform(
+            train=False), args.data_path)
 
     print("Creating data loaders")
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+        train_sampler = torch.utils.data.distributed.DistributedSampler(
+            dataset)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(
+            dataset_test)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
 
     if args.aspect_ratio_group_factor >= 0:
-        group_ids = create_aspect_ratio_groups(dataset, k=args.aspect_ratio_group_factor)
-        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
+        group_ids = create_aspect_ratio_groups(
+            dataset, k=args.aspect_ratio_group_factor)
+        train_batch_sampler = GroupedBatchSampler(
+            train_sampler, group_ids, args.batch_size)
     else:
         train_batch_sampler = torch.utils.data.BatchSampler(
             train_sampler, args.batch_size, drop_last=True)
@@ -99,7 +107,8 @@ def main(args):
 
     model_without_ddp = model
     if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
     params = [p for p in model.parameters() if p.requires_grad]
@@ -107,7 +116,8 @@ def main(args):
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -125,7 +135,13 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        train_one_epoch(
+            model,
+            optimizer,
+            data_loader,
+            device,
+            epoch,
+            args.print_freq)
         lr_scheduler.step()
         if args.output_dir:
             utils.save_on_master({
@@ -149,9 +165,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=__doc__)
 
-    parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset')
+    parser.add_argument(
+        '--data-path',
+        default='/datasets01/COCO/022719/',
+        help='dataset')
     parser.add_argument('--dataset', default='coco', help='dataset')
-    parser.add_argument('--model', default='maskrcnn_resnet50_fpn', help='model')
+    parser.add_argument(
+        '--model',
+        default='maskrcnn_resnet50_fpn',
+        help='model')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('-b', '--batch-size', default=2, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')
@@ -167,13 +189,36 @@ if __name__ == "__main__":
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
-    parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-steps', default=[16, 22], nargs='+', type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
-    parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
+    parser.add_argument(
+        '--lr-step-size',
+        default=8,
+        type=int,
+        help='decrease lr every step-size epochs')
+    parser.add_argument(
+        '--lr-steps',
+        default=[
+            16,
+            22],
+        nargs='+',
+        type=int,
+        help='decrease lr every step-size epochs')
+    parser.add_argument(
+        '--lr-gamma',
+        default=0.1,
+        type=float,
+        help='decrease lr by a factor of lr-gamma')
+    parser.add_argument(
+        '--print-freq',
+        default=20,
+        type=int,
+        help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument(
+        '--start_epoch',
+        default=0,
+        type=int,
+        help='start epoch')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
     parser.add_argument(
         "--test-only",
@@ -191,7 +236,10 @@ if __name__ == "__main__":
     # distributed training parameters
     parser.add_argument('--world-size', default=1, type=int,
                         help='number of distributed processes')
-    parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+    parser.add_argument(
+        '--dist-url',
+        default='env://',
+        help='url used to set up distributed training')
 
     args = parser.parse_args()
 

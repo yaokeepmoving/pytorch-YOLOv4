@@ -25,10 +25,17 @@ def arg_parse():
     """
 
     parser = argparse.ArgumentParser(description='YOLO v3 Cam Demo')
-    parser.add_argument("--confidence", dest="confidence", help="Object Confidence to filter predictions", default=0.25)
-    parser.add_argument("--nms_thresh", dest="nms_thresh", help="NMS Threshhold", default=0.4)
-    parser.add_argument("--reso", dest='reso', help=
-    "Input resolution of the network. Increase to increase accuracy. Decrease to increase speed",
+    parser.add_argument(
+        "--confidence",
+        dest="confidence",
+        help="Object Confidence to filter predictions",
+        default=0.25)
+    parser.add_argument(
+        "--nms_thresh",
+        dest="nms_thresh",
+        help="NMS Threshhold",
+        default=0.4)
+    parser.add_argument("--reso", dest='reso', help="Input resolution of the network. Increase to increase accuracy. Decrease to increase speed",
                         default="160", type=str)
     return parser.parse_args()
 
@@ -72,6 +79,7 @@ if __name__ == '__main__':
             if key & 0xFF == ord('q'):
                 break
             frames += 1
-            print("FPS of the video is {:5.2f}".format(frames / (time.time() - start)))
+            print("FPS of the video is {:5.2f}".format(
+                frames / (time.time() - start)))
         else:
             break

@@ -22,6 +22,7 @@ import argparse
 """hyper parameters"""
 use_cuda = True
 
+
 def detect_cv2(cfgfile, weightfile, imgfile):
     import cv2
     m = Darknet(cfgfile)
@@ -53,7 +54,11 @@ def detect_cv2(cfgfile, weightfile, imgfile):
         if i == 1:
             print('%s: Predicted in %f seconds.' % (imgfile, (finish - start)))
 
-    plot_boxes_cv2(img, boxes[0], savename='predictions.jpg', class_names=class_names)
+    plot_boxes_cv2(
+        img,
+        boxes[0],
+        savename='predictions.jpg',
+        class_names=class_names)
 
 
 def detect_cv2_camera(cfgfile, weightfile):
@@ -92,7 +97,8 @@ def detect_cv2_camera(cfgfile, weightfile):
         finish = time.time()
         print('Predicted in %f seconds.' % (finish - start))
 
-        result_img = plot_boxes_cv2(img, boxes[0], savename=None, class_names=class_names)
+        result_img = plot_boxes_cv2(
+            img, boxes[0], savename=None, class_names=class_names)
 
         cv2.imshow('Yolo demo', result_img)
         cv2.waitKey(1)
@@ -131,11 +137,16 @@ def detect_skimage(cfgfile, weightfile, imgfile):
         if i == 1:
             print('%s: Predicted in %f seconds.' % (imgfile, (finish - start)))
 
-    plot_boxes_cv2(img, boxes, savename='predictions.jpg', class_names=class_names)
+    plot_boxes_cv2(
+        img,
+        boxes,
+        savename='predictions.jpg',
+        class_names=class_names)
 
 
 def get_args():
-    parser = argparse.ArgumentParser('Test your image or video by trained model.')
+    parser = argparse.ArgumentParser(
+        'Test your image or video by trained model.')
     parser.add_argument('-cfgfile', type=str, default='./cfg/yolov4.cfg',
                         help='path of cfg file', dest='cfgfile')
     parser.add_argument('-weightfile', type=str,

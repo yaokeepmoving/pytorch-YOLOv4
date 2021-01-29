@@ -3,7 +3,8 @@
 
 '''
 import torch
-import os, sys
+import os
+import sys
 from torch.nn import functional as F
 
 import numpy as np
@@ -24,6 +25,7 @@ if version.parse(torch.__version__) >= version.parse('1.5.0'):
 else:
     def _true_divide(dividend, divisor):
         return dividend / divisor
+
 
 def bboxes_iou(bboxes_a, bboxes_b, fmt='voc', iou_type='iou'):
     """Calculate the Intersection of Unions (IoUs) between bounding boxes.
@@ -56,7 +58,7 @@ def bboxes_iou(bboxes_a, bboxes_b, fmt='voc', iou_type='iou'):
         tl_intersect = torch.max(
             bboxes_a[:, np.newaxis, :2],
             bboxes_b[:, :2]
-        ) # of shape `(N,K,2)`
+        )  # of shape `(N,K,2)`
         # bottom right
         br_intersect = torch.min(
             bboxes_a[:, np.newaxis, 2:],
@@ -91,16 +93,22 @@ def bboxes_iou(bboxes_a, bboxes_b, fmt='voc', iou_type='iou'):
         )
         bb_a = bboxes_a[:, 2:]
         bb_b = bboxes_b[:, 2:]
-    
+
     area_a = torch.prod(bb_a, 1)
     area_b = torch.prod(bb_b, 1)
-    
+
     # torch.prod(input, dim, keepdim=False, dtype=None) → Tensor
     # Returns the product of each row of the input tensor in the given dimension dim
-    # if tl, br does not form a nondegenerate squre, then the corr. element in the `prod` would be 0
-    en = (tl_intersect < br_intersect).type(tl_intersect.type()).prod(dim=2)  # shape `(N,K,2)` ---> shape `(N,K)`
+    # if tl, br does not form a nondegenerate squre, then the corr. element in
+    # the `prod` would be 0
+    en = (
+        tl_intersect < br_intersect).type(
+        tl_intersect.type()).prod(
+            dim=2)  # shape `(N,K,2)` ---> shape `(N,K)`
 
-    area_intersect = torch.prod(br_intersect - tl_intersect, 2) * en  # * ((tl < br).all())
+    area_intersect = torch.prod(
+        br_intersect - tl_intersect,
+        2) * en  # * ((tl < br).all())
     area_union = (area_a[:, np.newaxis] + area_b - area_intersect)
 
     iou = _true_divide(area_intersect, area_union)
@@ -113,7 +121,7 @@ def bboxes_iou(bboxes_a, bboxes_b, fmt='voc', iou_type='iou'):
         tl_union = torch.min(
             bboxes_a[:, np.newaxis, :2],
             bboxes_b[:, :2]
-        ) # of shape `(N,K,2)`
+        )  # of shape `(N,K,2)`
         # bottom right
         br_union = torch.max(
             bboxes_a[:, np.newaxis, 2:],
@@ -141,7 +149,7 @@ def bboxes_iou(bboxes_a, bboxes_b, fmt='voc', iou_type='iou'):
             bboxes_a[:, np.newaxis, :2] + bboxes_a[:, np.newaxis, 2:],
             bboxes_b[:, :2] + bboxes_b[:, 2:]
         )
-    
+
     # c for covering, of shape `(N,K,2)`
     # the last dim is box width, box hight
     bboxes_c = br_union - tl_union
@@ -154,16 +162,17 @@ def bboxes_iou(bboxes_a, bboxes_b, fmt='voc', iou_type='iou'):
         return giou
 
     if fmt.lower() == 'voc':  # xmin, ymin, xmax, ymax
-        centre_a = (bboxes_a[..., 2 :] + bboxes_a[..., : 2]) / 2
-        centre_b = (bboxes_b[..., 2 :] + bboxes_b[..., : 2]) / 2
+        centre_a = (bboxes_a[..., 2:] + bboxes_a[..., : 2]) / 2
+        centre_b = (bboxes_b[..., 2:] + bboxes_b[..., : 2]) / 2
     elif fmt.lower() == 'yolo':  # xcen, ycen, w, h
         centre_a = bboxes_a[..., : 2]
         centre_b = bboxes_b[..., : 2]
     elif fmt.lower() == 'coco':  # xmin, ymin, w, h
-        centre_a = bboxes_a[..., 2 :] + bboxes_a[..., : 2]/2
-        centre_b = bboxes_b[..., 2 :] + bboxes_b[..., : 2]/2
+        centre_a = bboxes_a[..., 2:] + bboxes_a[..., : 2] / 2
+        centre_b = bboxes_b[..., 2:] + bboxes_b[..., : 2] / 2
 
-    centre_dist = torch.norm(centre_a[:, np.newaxis] - centre_b, p='fro', dim=2)
+    centre_dist = torch.norm(
+        centre_a[:, np.newaxis] - centre_b, p='fro', dim=2)
     diag_len = torch.norm(bboxes_c, p='fro', dim=2)
 
     diou = iou - _true_divide(centre_dist.pow(2), diag_len.pow(2))
@@ -181,10 +190,11 @@ def bboxes_iou(bboxes_a, bboxes_b, fmt='voc', iou_type='iou'):
     eps = 1e-7
     v = torch.clamp(v, -1+eps, 1-eps)
     """
-    v = F.cosine_similarity(bb_a[:,np.newaxis,:], bb_b, dim=-1)
-    v = (_true_divide(2*torch.acos(v), np.pi)).pow(2)
+    v = F.cosine_similarity(bb_a[:, np.newaxis, :], bb_b, dim=-1)
+    v = (_true_divide(2 * torch.acos(v), np.pi)).pow(2)
     with torch.no_grad():
-        alpha = (_true_divide(v, 1-iou+v)) * ((iou>=0.5).type(iou.type()))
+        alpha = (_true_divide(v, 1 - iou + v)) * \
+            ((iou >= 0.5).type(iou.type()))
 
     ciou = diou - alpha * v
 

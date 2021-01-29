@@ -34,6 +34,7 @@ class GroupedBatchSampler(BatchSampler):
             0, i.e. they must be in the range [0, num_groups).
         batch_size (int): Size of mini-batch.
     """
+
     def __init__(self, sampler, group_ids, batch_size):
         if not isinstance(sampler, Sampler):
             raise ValueError(
@@ -71,8 +72,10 @@ class GroupedBatchSampler(BatchSampler):
             for group_id, _ in sorted(buffer_per_group.items(),
                                       key=lambda x: len(x[1]), reverse=True):
                 remaining = self.batch_size - len(buffer_per_group[group_id])
-                samples_from_group_id = _repeat_to_at_least(samples_per_group[group_id], remaining)
-                buffer_per_group[group_id].extend(samples_from_group_id[:remaining])
+                samples_from_group_id = _repeat_to_at_least(
+                    samples_per_group[group_id], remaining)
+                buffer_per_group[group_id].extend(
+                    samples_from_group_id[:remaining])
                 assert len(buffer_per_group[group_id]) == self.batch_size
                 yield buffer_per_group[group_id]
                 num_remaining -= 1
